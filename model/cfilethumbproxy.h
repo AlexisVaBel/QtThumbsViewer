@@ -3,6 +3,7 @@
 
 #include <QIdentityProxyModel>
 #include <QMap>
+#include <QMutex>
 #include <QThreadPool>
 
 
@@ -18,6 +19,7 @@ public slots:
 
 public:
     CFileThumbProxy(QObject * parent = nullptr);
+    ~CFileThumbProxy();
 
     // QAbstractItemModel interface
 
@@ -25,10 +27,13 @@ public:
 
 
 private:
+
     QMap<QString,QPixmap*>    m_cache;
     QThreadPool              *m_pool;
+    QString                   m_strPath;
+//    QMutex                   *mutex;
     void load_empty_pixmap(const QString &path) const;
-
+    void reset_data(QString str) const;
 };
 
 #endif // CFILETHUMBPROXY_H

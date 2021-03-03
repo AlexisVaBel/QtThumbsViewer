@@ -19,6 +19,7 @@ public:
 
 public slots:
     void on_tree_item_clicked(QModelIndex idx);
+    void on_all_files_loaded(QString path);
     void change_size(int value);
 
 

@@ -4,10 +4,12 @@
 #include <QHeaderView>
 #include <QFileIconProvider>
 
+#include <QDebug>
+
 #include "view/cfileicondelegate.h"
 #include "view/ciconlistview.h"
 
-#include <model/cfilethumbproxy.h>
+#include "model/cfilethumbproxy.h"
 
 
 
@@ -95,6 +97,7 @@ void CDirThumbsViewer::prepare_sig_slots()
 
     // not to use casting, using SIGNAL - SLOTS
     connect(m_filesList, SIGNAL(wheel_move(int)), this, SLOT(change_size(int)));
+    connect(m_filesModel, &QFileSystemModel::directoryLoaded, this, &CDirThumbsViewer::on_all_files_loaded);
 }
 
 void CDirThumbsViewer::set_models()
@@ -126,6 +129,13 @@ void CDirThumbsViewer::on_tree_item_clicked(QModelIndex idx)
     QModelIndex mappedIndex = m_proxy->mapFromSource(actualIndex);
 
     m_filesList->setRootIndex(mappedIndex);
+}
+
+void CDirThumbsViewer::on_all_files_loaded(QString path)
+{
+//
+    qDebug()<< "dir loaded " << path;
+
 }
 
 void CDirThumbsViewer::change_size(int value)
