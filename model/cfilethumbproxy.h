@@ -6,6 +6,8 @@
 #include <QMutex>
 #include <QThreadPool>
 
+#include <file_io/cthumbsloader.h>
+
 
 
 class CFileThumbProxy:public QIdentityProxyModel {
@@ -25,13 +27,16 @@ public:
 
     QVariant data(const QModelIndex &index, int role) const;
 
+    void    stop();
 
 private:
 
-    QMap<QString,QPixmap*>    m_cache;
-    QThreadPool              *m_pool;
+    QMap<QString,QPixmap*>    m_cache;    
     QString                   m_strPath;
-//    QMutex                   *mutex;
+    CThumbsLoader             *m_loader;
+
+
+
     void load_empty_pixmap(const QString &path) const;
     void reset_data(QString str) const;
 };

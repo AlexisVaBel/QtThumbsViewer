@@ -24,17 +24,18 @@ public slots:
 
 
 private:
-    QTreeView *m_dirsTree;
-    QListView *m_filesList;
+    QTreeView           *m_dirsTree;
+    QListView           *m_filesList;
 
     QFileSystemModel    *m_dirsModel;
     QFileSystemModel    *m_filesModel;
     QIdentityProxyModel *m_proxy;
 
 
+
     QStyledItemDelegate *m_iconDelegate;
 
-    QSize m_sizeIcons;
+    QSize m_sizeIcons;    
 
     //  setup operations
     void prepare_ui();
@@ -46,8 +47,17 @@ private:
     // ~setup operations
 
     void apply_size();
+    void before_close();
 
 
+    // QWidget interface
+protected:
+    void closeEvent(QCloseEvent *event);
+
+    // QDialog interface
+public slots:
+    void accept();
+    void reject();
 };
 
 

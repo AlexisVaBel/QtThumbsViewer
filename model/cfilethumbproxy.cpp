@@ -1,8 +1,9 @@
 #include "cfilethumbproxy.h"
 
+#include <QDebug>
 #include <QFileSystemModel>
 
-#include <QtConcurrent>
+
 
 namespace CFileThumb{
 QPixmap *get_pixmap(const QString & path){
@@ -12,16 +13,20 @@ QPixmap *get_pixmap(const QString & path){
 }
 }
 
-CFileThumbProxy::CFileThumbProxy(QObject *parent):QIdentityProxyModel(parent),m_pool(new QThreadPool(this))
+CFileThumbProxy::CFileThumbProxy(QObject *parent):QIdentityProxyModel(parent)
 {
     m_strPath = "";
-    m_pool->setMaxThreadCount(1);
-    connect(this, &CFileThumbProxy::pixmap_loaded, this, &CFileThumbProxy::on_loaded_pixmap);
+
+    m_loader = new CThumbsLoader(this);
+    m_loader->setAutoDelete(false);
+    QThreadPool::globalInstance()->start(m_loader);
+    connect(m_loader, &CThumbsLoader::on_loaded_img, this, &CFileThumbProxy::on_loaded_pixmap);
 }
 
 CFileThumbProxy::~CFileThumbProxy()
 {
-    m_pool->deleteLater();
+    stop();
+    m_loader->deleteLater();
 }
 
 QVariant CFileThumbProxy::data(const QModelIndex &index, int role) const
@@ -31,7 +36,10 @@ QVariant CFileThumbProxy::data(const QModelIndex &index, int role) const
 
 
         auto path = index.data(QFileSystemModel::FilePathRole).toString();
-
+        auto dirpath = path.left(path.lastIndexOf("/"));
+        if(m_strPath.compare(dirpath,Qt::CaseInsensitive) != 0){
+            reset_data(dirpath);
+        }
 
         auto it = m_cache.find(path);
         if(it != m_cache.end()){
@@ -40,15 +48,20 @@ QVariant CFileThumbProxy::data(const QModelIndex &index, int role) const
 
 
         load_empty_pixmap(path);
-
         QPersistentModelIndex pIndex{index};
 
-//        QtConcurrent::run(m_pool, [this,path,pIndex]{
-//            emit const_cast<CFileThumbProxy*>(this)->pixmap_loaded(path, CFileThumb::get_pixmap(path), pIndex);
-//        });
+        m_loader->add_task(path, pIndex);
+
+
         return QVariant{};
     }
     return QIdentityProxyModel::data(index, role);
+}
+
+void CFileThumbProxy::stop()
+{
+    m_loader->clear_tasks();
+    m_loader->stop();
 }
 
 void CFileThumbProxy::load_empty_pixmap(const QString &path) const
@@ -59,8 +72,8 @@ void CFileThumbProxy::load_empty_pixmap(const QString &path) const
 
 void CFileThumbProxy::reset_data(QString str="") const
 {
-    qDeleteAll( m_cache );
-
+//    qDeleteAll( m_cache );
+    m_loader->clear_tasks();
     const_cast<CFileThumbProxy*>(this)->m_strPath = str;
     const_cast<CFileThumbProxy*>(this)->m_cache.clear();
 }
@@ -69,8 +82,6 @@ void CFileThumbProxy::reset_data(QString str="") const
 
 void CFileThumbProxy::on_loaded_pixmap(const QString &path, QPixmap *pix, const QPersistentModelIndex &index)
 {
-//    QMutexLocker lck(mutex);
     m_cache.insert(path, pix);
-//    lck.unlock();
     emit dataChanged(index, index, QVector<int>{QFileSystemModel::FileIconRole});
 }

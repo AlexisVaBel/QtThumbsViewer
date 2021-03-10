@@ -4,7 +4,6 @@
 #include <QHeaderView>
 #include <QFileIconProvider>
 
-#include <QDebug>
 
 #include "view/cfileicondelegate.h"
 #include "view/ciconlistview.h"
@@ -14,7 +13,7 @@
 
 
 CDirThumbsViewer::CDirThumbsViewer(QWidget *prnt):QDialog(prnt),m_sizeIcons(200,200)
-{
+{    
     prepare_model();
     prepare_ui();
     set_models();
@@ -97,7 +96,7 @@ void CDirThumbsViewer::prepare_sig_slots()
 
     // not to use casting, using SIGNAL - SLOTS
     connect(m_filesList, SIGNAL(wheel_move(int)), this, SLOT(change_size(int)));
-    connect(m_filesModel, &QFileSystemModel::directoryLoaded, this, &CDirThumbsViewer::on_all_files_loaded);
+//    connect(m_filesModel, &QFileSystemModel::directoryLoaded, this, &CDirThumbsViewer::on_all_files_loaded);
 }
 
 void CDirThumbsViewer::set_models()
@@ -120,10 +119,31 @@ void CDirThumbsViewer::apply_size()
     m_filesList->setGridSize(QSize(m_sizeIcons.width()+10,m_sizeIcons.height()+10));
 }
 
+void CDirThumbsViewer::before_close()
+{
+    auto proxy = qobject_cast<CFileThumbProxy*> (m_proxy);
+    proxy->stop();
+}
+
+void CDirThumbsViewer::closeEvent(QCloseEvent *event)
+{
+    before_close();
+}
+
+void CDirThumbsViewer::accept()
+{
+
+}
+
+void CDirThumbsViewer::reject()
+{
+
+}
+
 
 void CDirThumbsViewer::on_tree_item_clicked(QModelIndex idx)
 {
-    QString strPath = m_dirsModel->fileInfo(idx).absoluteFilePath();
+    QString strPath         = m_dirsModel->fileInfo(idx).absoluteFilePath();
 
     QModelIndex actualIndex = m_filesModel->setRootPath(strPath);
     QModelIndex mappedIndex = m_proxy->mapFromSource(actualIndex);
@@ -133,8 +153,6 @@ void CDirThumbsViewer::on_tree_item_clicked(QModelIndex idx)
 
 void CDirThumbsViewer::on_all_files_loaded(QString path)
 {
-//
-    qDebug()<< "dir loaded " << path;
 
 }
 
